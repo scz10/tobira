@@ -5,8 +5,12 @@ import (
     "net"
     "log"
     "io"
-    "io/ioutil"
-
+	"io/ioutil"
+	"strconv"
+	"flag"
+	"os"
+	
+	"github.com/joho/godotenv"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -38,7 +42,7 @@ func (tunnel *SSHtunnel) Start() error {
 		log.Fatalln(fmt.Printf("Listen open port ON remote server error: %s", err))
 	}
 	defer listener.Close()
-
+	fmt.Println("Start forwarding port " + tunnel.Local.String() + " -> " + listener.Addr().String())
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -84,29 +88,49 @@ func publicKeyFile(file string) ssh.AuthMethod {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+	  log.Fatal("Error loading .env file")
+	}
+
+	localPortPtr := flag.Int("local", 80, "Specify local port that want be forwarded")
+	remotePortPtr := flag.Int("remote", 0, "Specify remote port for destination local forwarded port")
+	flag.Parse()
+	
+	serverPort, _ := strconv.Atoi(os.Getenv("REMOTE_PORT"))
+	
 	localEndpoint := &Endpoint{
 		Host: "localhost",
-		Port: 3306,
+		Port: *localPortPtr,
 	}
 
 	serverEndpoint := &Endpoint{
-		Host: "192.168.100.9",
-		Port: 22,
+		Host: os.Getenv("REMOTE_SERVER"),
+		Port: serverPort,
 	}
 
 	remoteEndpoint := &Endpoint{
-		Host: "localhost",
-		Port: 6000,
+		Host: os.Getenv("REMOTE_SERVER"),
+		Port: *remotePortPtr,
 	}
-
+	
 	sshConfig := &ssh.ClientConfig{
-		User: "coba",
+		User: os.Getenv("REMOTE_USERNAME"),
 		Auth: []ssh.AuthMethod{
-			//publicKeyFile("C:/Users/Xian/.ssh/id_rsa"),
-			ssh.Password("aja"),
-        },
-        HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+			ssh.Password(os.Getenv("REMOTE_PASSWORD")),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
+	if val, _ := strconv.ParseBool(os.Getenv("PASSWORDLESS")); val == true {
+		sshConfig = &ssh.ClientConfig{
+			User: os.Getenv("REMOTE_USERNAME"),
+			Auth: []ssh.AuthMethod{
+				publicKeyFile(os.Getenv("SSH_KEY")),
+			},
+			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+		}
+	}
+	
 
 	tunnel := &SSHtunnel{
 		Config: sshConfig,
