@@ -1,15 +1,17 @@
 package main
 
 import (
-	"fmt"
-    "net"
-    "log"
-    "io"
-	"io/ioutil"
-	"strconv"
 	"flag"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"log"
+	"net"
+	"net/http"
 	"os"
-	
+	"strconv"
+	"time"
+
 	"github.com/joho/godotenv"
 	"golang.org/x/crypto/ssh"
 )
@@ -32,11 +34,11 @@ type SSHtunnel struct {
 }
 
 func (tunnel *SSHtunnel) Start() error {
-    serverConn, err := ssh.Dial("tcp", tunnel.Server.String(), tunnel.Config)
+	serverConn, err := ssh.Dial("tcp", tunnel.Server.String(), tunnel.Config)
 	if err != nil {
 		fmt.Printf("Server dial error: %s\n", err)
-    }
-    
+	}
+
 	listener, err := serverConn.Listen("tcp", tunnel.Remote.String())
 	if err != nil {
 		log.Fatalln(fmt.Printf("Listen open port ON remote server error: %s", err))
@@ -56,13 +58,13 @@ func (tunnel *SSHtunnel) forward(remote net.Conn) {
 	local, err := net.Dial("tcp", tunnel.Local.String())
 	if err != nil {
 		log.Fatalln(fmt.Printf("Dial INTO local service error: %s", err))
-	}	
+	}
 
-	copyConn:=func(writer, reader net.Conn) {
+	copyConn := func(writer, reader net.Conn) {
 		defer writer.Close()
 		defer reader.Close()
-		
-		_, err:= io.Copy(writer, reader)
+
+		_, err := io.Copy(writer, reader)
 		if err != nil {
 			fmt.Printf("io.Copy error: %s", err)
 		}
@@ -71,7 +73,13 @@ func (tunnel *SSHtunnel) forward(remote net.Conn) {
 	go copyConn(local, remote)
 	go copyConn(remote, local)
 }
-
+func connected() (ok bool) {
+	_, err := http.Get("http://clients3.google.com/generate_204")
+	if err != nil {
+		return false
+	}
+	return true
+}
 func publicKeyFile(file string) ssh.AuthMethod {
 	buffer, err := ioutil.ReadFile(file)
 	if err != nil {
@@ -88,17 +96,23 @@ func publicKeyFile(file string) ssh.AuthMethod {
 }
 
 func main() {
+	if !connected() {
+		fmt.Println("No internet connection, waiting for internet connection")
+	}
+	for !connected() {
+		time.Sleep(60 * time.Second)
+	}
 	err := godotenv.Load()
 	if err != nil {
-	  log.Fatal("Error loading .env file")
+		log.Fatal("Error loading .env file")
 	}
 
 	localPortPtr := flag.Int("local", 80, "Specify local port that want be forwarded")
 	remotePortPtr := flag.Int("remote", 0, "Specify remote port for destination local forwarded port")
 	flag.Parse()
-	
+
 	serverPort, _ := strconv.Atoi(os.Getenv("REMOTE_PORT"))
-	
+
 	localEndpoint := &Endpoint{
 		Host: "localhost",
 		Port: *localPortPtr,
@@ -113,7 +127,7 @@ func main() {
 		Host: os.Getenv("REMOTE_SERVER"),
 		Port: *remotePortPtr,
 	}
-	
+
 	sshConfig := &ssh.ClientConfig{
 		User: os.Getenv("REMOTE_USERNAME"),
 		Auth: []ssh.AuthMethod{
@@ -130,7 +144,6 @@ func main() {
 			HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		}
 	}
-	
 
 	tunnel := &SSHtunnel{
 		Config: sshConfig,
