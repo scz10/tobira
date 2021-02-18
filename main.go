@@ -107,8 +107,8 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	localPortPtr := flag.Int("local", 80, "Specify local port that want be forwarded")
-	remotePortPtr := flag.Int("remote", 0, "Specify remote port for destination local forwarded port")
+	localPortPtr := flag.Int("local", 80, "Specify local port that want be forwarded, default is port 80")
+	remotePortPtr := flag.Int("remote", 0, "Specify remote port for destination local forwarded port, default is random available port")
 	flag.Parse()
 
 	serverPort, _ := strconv.Atoi(os.Getenv("REMOTE_PORT"))
