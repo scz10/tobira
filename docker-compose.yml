@@ -1,0 +1,16 @@
+---
+version: "2.1"
+services:
+  openssh-server:
+    image: scz10/tobira:v0.1
+    network_mode: "host"
+    container_name: tobira-server
+    hostname: tobira-server #optional
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Asia/Jakarta
+      - PASSWORD_ACCESS=true
+      - USER_PASSWORD=secret
+      - USER_NAME=tobira
+    restart: unless-stopped
