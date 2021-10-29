@@ -1,0 +1,43 @@
+name: Build and Release Tobira
+on: [push, pull_request]
+env:
+  VERSION: "1"
+jobs:
+  Build-And-Release-Tobira:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+      - run: echo "VERSION=$(go run main.go --version)" >> $GITHUB_ENV
+      - run: mkdir out
+      - name: build for linux/amd64
+        run: |
+          GOOS=linux GOARCH=amd64 go build -o bin/linux/amd64/tobira main.go 
+          cp .env.example bin/linux/amd64/.env
+          tar -zcvf out/tobira-linux-amd64.tar.gz bin/linux/amd64
+      - name: build for linux/arm64
+        run: |
+          GOOS=linux GOARCH=arm64 go build -o bin/linux/arm64/tobira main.go
+          cp .env.example bin/linux/arm64/.env
+          tar -zcvf out/tobira-linux-arm64.tar.gz bin/linux/arm64
+      - name: build for linux/arm/v7
+        run: |
+          GOOS=linux GOARCH=arm GOARM=7 go build -o bin/linux/armv7/tobira main.go
+          cp .env.example bin/linux/armv7/.env
+          tar -zcvf out/tobira-linux-armv7.tar.gz bin/linux/armv7
+      - name: build for windows/amd64
+        run: |
+          GOOS=windows GOARCH=amd64 go build -o bin/windows/tobira.exe main.go
+          cp .env.example bin/windows/.env
+          tar -zcvf out/tobira-windows-amd64.tar.gz bin/windows
+      
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        if: ${{ github.ref == 'refs/heads/main' }}
+        with:
+          repo_token: "${{ secrets.TOKEN }}"
+          automatic_release_tag: ${{ env.VERSION }}
+          prerelease: false
+          title: "Tobira - ${{ env.VERSION }}"
+          files: |
+            out/*.tar.gz
+      

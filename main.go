@@ -96,6 +96,16 @@ func publicKeyFile(file string) ssh.AuthMethod {
 }
 
 func main() {
+	localPortPtr := flag.Int("local", 80, "Specify local port that want be forwarded, default is port 80")
+	remotePortPtr := flag.Int("remote", 0, "Specify remote port for destination local forwarded port, default is random available port")
+	version := flag.Bool("version", false, "prints current tobira version")
+	flag.Parse()
+
+	if *version {
+		fmt.Println("v1.0.0")
+		os.Exit(0)
+	}
+
 	if !connected() {
 		fmt.Println("No internet connection, waiting for internet connection")
 	}
@@ -106,10 +116,6 @@ func main() {
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
-
-	localPortPtr := flag.Int("local", 80, "Specify local port that want be forwarded, default is port 80")
-	remotePortPtr := flag.Int("remote", 0, "Specify remote port for destination local forwarded port, default is random available port")
-	flag.Parse()
 
 	serverPort, _ := strconv.Atoi(os.Getenv("REMOTE_PORT"))
 
