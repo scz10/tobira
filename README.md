@@ -25,17 +25,19 @@ You can use your ssh server on host server, by editing **/etc/ssh/sshd_config** 
 ---
 version: "2.1"
 services:
-  openssh-server:
-    image: scz10/tobira:v0.1
+  tobira-server:
+    image: scz10/tobira:latest
     network_mode: "host"
     container_name: tobira-server
     hostname: tobira-server #optional
     environment:
+      - GATEWAY_PORTS=yes
+      - TCP_FORWARDING=all
       - PUID=1000
       - PGID=1000
       - TZ=Asia/Jakarta
       - PASSWORD_ACCESS=true
-      - USER_PASSWORD=passwordhere
+      - USER_PASSWORD=secret
       - USER_NAME=tobira
     restart: unless-stopped
 ```
