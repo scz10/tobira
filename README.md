@@ -1,9 +1,9 @@
 # How to use
-First fill your server detail first in **.env.example** file, and then rename it into **.env** and then copy **.env** to same location bin you want to use, ex : **bin/windows**
 
-```bash
-cp .env.example bin/windows/.env
-```
+![tobira workflow](https://github.com/scz10/tobira/actions/workflows/github-action.yml/badge.svg)
+
+
+First Download the binary that have been compiled in release section based on you machine arch, and then extract the archive you download, and then edit **.env** file and fill with your server details. 
 
 Let say you want forward your local port 3306 to your server so it can be accessed by public using port 6689, you can use
 
