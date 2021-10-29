@@ -1,9 +1,9 @@
 # How to use
-First fill your server detail first in **.env.example** file, and then rename it into **.env** and then copy **.env** to same location bin you want to use, ex : **bin/windows**
 
-```bash
-cp .env.example bin/windows/.env
-```
+![tobira workflow](https://github.com/scz10/tobira/actions/workflows/github-action.yml/badge.svg)
+
+
+First Download the binary that have been compiled in release section based on you machine arch, and then extract the archive you download, and then edit **.env** file and fill with your server details. 
 
 Let say you want forward your local port 3306 to your server so it can be accessed by public using port 6689, you can use
 
@@ -25,17 +25,19 @@ You can use your ssh server on host server, by editing **/etc/ssh/sshd_config** 
 ---
 version: "2.1"
 services:
-  openssh-server:
-    image: scz10/tobira:v0.1
+  tobira-server:
+    image: scz10/tobira:latest
     network_mode: "host"
     container_name: tobira-server
     hostname: tobira-server #optional
     environment:
+      - GATEWAY_PORTS=yes
+      - TCP_FORWARDING=all
       - PUID=1000
       - PGID=1000
       - TZ=Asia/Jakarta
       - PASSWORD_ACCESS=true
-      - USER_PASSWORD=passwordhere
+      - USER_PASSWORD=secret
       - USER_NAME=tobira
     restart: unless-stopped
 ```
